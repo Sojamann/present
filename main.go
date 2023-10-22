@@ -24,6 +24,20 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
+func (m *model) renderSlide(slide string) string {
+	return lipgloss.NewStyle().
+		Width(m.vp.Width-1).
+		MaxWidth(m.vp.Width-1).
+		Height(m.vp.Height-1).
+		MaxHeight(m.vp.Height-1).
+		Align(lipgloss.Center).
+		Margin(1).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(lipgloss.Color("63")).
+		BorderRight(true).
+		Render(slide)
+}
+
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var (
 		cmd  tea.Cmd
@@ -38,22 +52,22 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "l", tea.KeyRight.String():
 			m.currSlide = min(m.currSlide+1, len(m.slides)-1)
-			m.vp.SetContent(m.slides[m.currSlide])
+			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		case "h", tea.KeyLeft.String():
 			m.currSlide = max(0, m.currSlide-1)
-			m.vp.SetContent(m.slides[m.currSlide])
+			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		}
 
 	case tea.WindowSizeMsg:
 		// -1 because of footer
 		if !m.ready { 
 			m.vp = viewport.New(msg.Width, msg.Height-1)
-			m.vp.SetContent(m.slides[m.currSlide])
-			m.ready = true
+			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		} else {
 			m.vp.Width = msg.Width
 			m.vp.Height = msg.Height-1
 		}
+		m.ready = true
 	}
 
 	// THe viewport might wants to do some things
@@ -67,10 +81,13 @@ func (m *model) View() string {
 	if !m.ready {
 		return "\n Loading ... "
 	}
+	status := lipgloss.NewStyle().
+		Width(m.vp.Width).
+		MaxWidth(m.vp.Width).
+		Background(lipgloss.Color("12")).
+		Render(fmt.Sprintf("[%d/%d]  Author Name", m.currSlide+1, len(m.slides)))
 
-	footer := lipgloss.NewStyle().Render("q - Quit | h/Left - prev slide | l/Right - next slide")
-
-	return fmt.Sprintf("%s\n%s", m.vp.View(), footer)
+	return fmt.Sprintf("%s\n%s", m.vp.View(), status)
 }
 
 
@@ -79,9 +96,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	slides := strings.Split(string(data), "---")
+	if len(slides) == 0 {
+		return
+	}
+	if slides[0] == "" {
+		slides = slides[1:]
+	}
 	m := &model {
-		slides: strings.Split(string(data), "---"),
+		slides: slides,
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen());
 	if _, err := p.Run(); err != nil {
