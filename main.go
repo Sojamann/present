@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2/lexers"
+	"github.com/alecthomas/chroma/v2/quick"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -24,18 +26,61 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *model) renderSlide(slide string) string {
+func (m *model) renderText(text string) string {
 	return lipgloss.NewStyle().
-		Width(m.vp.Width-1).
-		MaxWidth(m.vp.Width-1).
+		Width(m.vp.Width).
+		AlignHorizontal(lipgloss.Center).
+		AlignVertical(lipgloss.Center).
+		Render(text)
+}
+
+func (m *model) renderCode(code string) string {
+	start := strings.Index(code, "\n")
+	lexer := lexers.Fallback
+	// try getting the user defined lexer based on the name of the 
+	// language. If not use the fallback lexer instead
+	if choice := lexers.Get(code[:start]); choice != nil {
+		lexer = choice
+	}
+	// the code starts at the next line
+	code = code[start:]
+	buff := &strings.Builder{}
+	quick.Highlight(buff, code, lexer.Config().Name, "terminal", "monokai")
+	return lipgloss.NewStyle().
+		AlignVertical(lipgloss.Center).
+		Render(buff.String())
+}
+
+func (m *model) renderSlide(slide string) string {
+	buff := &strings.Builder{}
+	
+	var last, found int
+	var insideCode bool
+outer:
+	for {
+		found = strings.Index(slide[last:], "```")
+		if found == -1 {
+			buff.WriteString(m.renderText(slide[last:]))
+			break outer
+		}
+
+		found += last
+
+		if insideCode {
+			buff.WriteString(m.renderCode(slide[last:found]))
+			insideCode = false
+		}else { 
+			buff.WriteString(m.renderText(slide[last:found]))	
+			insideCode = true
+		}
+		last = found+3 // go ``` many ahead
+	}
+	
+	return lipgloss.NewStyle().
 		Height(m.vp.Height-1).
 		MaxHeight(m.vp.Height-1).
-		Align(lipgloss.Center).
-		Margin(1).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("63")).
-		BorderRight(true).
-		Render(slide)
+		Padding(1).
+		Render(buff.String())
 }
 
 func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -63,6 +108,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.ready { 
 			m.vp = viewport.New(msg.Width, msg.Height-1)
 			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
+			println("RENDER SLIDE", m.renderSlide(m.slides[m.currSlide]))
 		} else {
 			m.vp.Width = msg.Width
 			m.vp.Height = msg.Height-1

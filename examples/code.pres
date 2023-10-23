@@ -1,0 +1,18 @@
+
+```go
+func main() {
+    println("Test")
+}
+```
+---
+
+Some before
+
+```yaml
+some: key
+list:
+- a
+- b
+```
+Some after
+

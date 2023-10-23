@@ -4,10 +4,26 @@ foreground: white
 
 --- [Slide]
 
-Hello this is some text
+Hello my name is sojamann.
 
 --- 
 
-This is some other slice with more text
-Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
+This presentation tool is here to whip up some quick 
+and clean presentation which even the darn mangement 
+is okay with.
+
+---
+
+We show some code
+
+@code
+"
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hi")
+}
+"
 
