@@ -81,11 +81,20 @@ func (m *model) View() string {
 	if !m.ready {
 		return "\n Loading ... "
 	}
-	status := lipgloss.NewStyle().
-		Width(m.vp.Width).
-		MaxWidth(m.vp.Width).
-		Background(lipgloss.Color("12")).
-		Render(fmt.Sprintf("[%d/%d]  Author Name", m.currSlide+1, len(m.slides)))
+	
+	parts := 2
+	progress := lipgloss.NewStyle().
+		Width(m.vp.Width/parts).
+		Align(lipgloss.Left).
+		PaddingLeft(2).
+		Render(fmt.Sprintf("[%d/%d]", m.currSlide+1, len(m.slides)))
+
+	author := lipgloss.NewStyle().
+		Width(m.vp.Width/parts).
+		Align(lipgloss.Right).
+		PaddingRight(2).
+		Render("Author Name")
+	status := progress+author 
 
 	return fmt.Sprintf("%s\n%s", m.vp.View(), status)
 }
