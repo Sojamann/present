@@ -17,7 +17,7 @@ is okay with.
 We show some code
 
 @code
-"
+```
 package main
 
 import "fmt"
@@ -25,5 +25,5 @@ import "fmt"
 func main() {
     fmt.Println("Hi")
 }
-"
+```
 

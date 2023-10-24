@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2/lexers"
@@ -12,6 +13,27 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
+
+// TODO: rename
+func codeHandler(arg string, code string) string {
+	lexer := lexers.Fallback
+	// try getting the user defined lexer based on the name of the 
+	// language. If not use the fallback lexer instead
+	if choice := lexers.Get(arg); choice != nil {
+		lexer = choice
+	}
+	// the code starts at the next line
+	buff := &strings.Builder{}
+	quick.Highlight(buff, code, lexer.Config().Name, "terminal", "monokai")
+	return buff.String() 
+}
+
+
+var pluginRegEx = regexp.MustCompile("@(code)(:{(.*)})?\n")
+var handlers = map[string]func(string, string)string {
+	"code": codeHandler,
+}
+
 
 type model struct {
 	slides []string
@@ -26,60 +48,60 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
+// renders normal text
 func (m *model) renderText(text string) string {
-	return lipgloss.NewStyle().
-		Width(m.vp.Width).
-		AlignHorizontal(lipgloss.Center).
-		AlignVertical(lipgloss.Center).
-		Render(text)
+	return text
 }
 
-func (m *model) renderCode(code string) string {
-	start := strings.Index(code, "\n")
-	lexer := lexers.Fallback
-	// try getting the user defined lexer based on the name of the 
-	// language. If not use the fallback lexer instead
-	if choice := lexers.Get(code[:start]); choice != nil {
-		lexer = choice
-	}
-	// the code starts at the next line
-	code = code[start:]
-	buff := &strings.Builder{}
-	quick.Highlight(buff, code, lexer.Config().Name, "terminal", "monokai")
-	return lipgloss.NewStyle().
-		AlignVertical(lipgloss.Center).
-		Render(buff.String())
-}
 
+// TODO: add error handling
 func (m *model) renderSlide(slide string) string {
 	buff := &strings.Builder{}
 	
-	var last, found int
-	var insideCode bool
-outer:
+	var offset int
 	for {
-		found = strings.Index(slide[last:], "```")
-		if found == -1 {
-			buff.WriteString(m.renderText(slide[last:]))
-			break outer
+		indecies := pluginRegEx.FindStringSubmatchIndex(slide[offset:])
+		// no plugin found .... render the text
+		if len(indecies) == 0 {
+			buff.WriteString(m.renderText(slide[offset:]))
+			break
 		}
+		
+		// write out everything we have seen up till the plugin starts
+		beforeString := m.renderText(slide[offset:offset+indecies[0]])
+		buff.WriteString(beforeString)
 
-		found += last
-
-		if insideCode {
-			buff.WriteString(m.renderCode(slide[last:found]))
-			insideCode = false
-		}else { 
-			buff.WriteString(m.renderText(slide[last:found]))	
-			insideCode = true
+		pluginName := slide[offset+indecies[2]:offset+indecies[3]]
+		pluginOpt := ""
+		if indecies[4] != -1 {
+			pluginOpt = slide[offset+indecies[6]:offset+indecies[7]]
 		}
-		last = found+3 // go ``` many ahead
+		
+		// lets get the content
+		offset += indecies[1]
+		contentStart := strings.Index(slide[offset:], "```") + offset + 3
+		offset = contentStart
+
+		contentEnd := strings.Index(slide[offset:], "```") + offset
+		offset = contentEnd + 3
+		
+		pluginArg := slide[contentStart:contentEnd]
+		handlerResult := handlers[pluginName](pluginOpt, pluginArg)
+		buff.WriteString(handlerResult)
 	}
 	
+	// we want to center the entire content box not the 
+	// text itself (this would be alignment)
+	width, height := lipgloss.Size(buff.String())
 	return lipgloss.NewStyle().
 		Height(m.vp.Height-1).
 		MaxHeight(m.vp.Height-1).
-		Padding(1).
+		Width(m.vp.Width).
+		MaxWidth(m.vp.Width).
+		MarginTop((m.vp.Height-height)/2).
+		MarginBottom((m.vp.Height-height)/2).
+		MarginLeft((m.vp.Width-width)/2).
+		MarginRight((m.vp.Width-width)/2).
 		Render(buff.String())
 }
 
@@ -108,7 +130,6 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if !m.ready { 
 			m.vp = viewport.New(msg.Width, msg.Height-1)
 			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
-			println("RENDER SLIDE", m.renderSlide(m.slides[m.currSlide]))
 		} else {
 			m.vp.Width = msg.Width
 			m.vp.Height = msg.Height-1
