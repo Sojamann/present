@@ -2,9 +2,15 @@
 background: black
 foreground: white
 
+style:
+    h1:
+        fg: red
+        bg: white
+        bold: true
+
 --- [Slide]
 
-Hello my name is sojamann.
+Hello my !b{name} is !h1{sojamann}.
 
 --- 
 
