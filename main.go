@@ -4,53 +4,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 
-	"github.com/alecthomas/chroma/v2/lexers"
-	"github.com/alecthomas/chroma/v2/quick"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-func Keys[M ~map[K]V, K comparable, V any](m M) []K {
-	r := make([]K, 0, len(m))
-	for k := range m {
-		r = append(r, k)
-	}
-	return r
-}
-
-// TODO: rename
-func codeHandler(arg string, code string, width int) string {
-	lexer := lexers.Fallback
-	// try getting the user defined lexer based on the name of the
-	// language. If not use the fallback lexer instead
-	if choice := lexers.Get(arg); choice != nil {
-		lexer = choice
-	}
-	// the code starts at the next line
-	buff := &strings.Builder{}
-	quick.Highlight(buff, code, lexer.Config().Name, "terminal", "monokai")
-	return lipgloss.NewStyle().MaxWidth(width).Render(buff.String())
-}
-
-func noteHandler(arg string, code string, width int) string {
-	return lipgloss.NewStyle().
-		Width(width).
-		MaxWidth(width).
-		Foreground(lipgloss.AdaptiveColor{Light: "#343433", Dark: "#C1C6B2"}).
-		Background(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#353533"}).
-		Padding(1).
-		Render(code)
-}
-
-var pluginRegEx = regexp.MustCompile("@(code|note)(:{(.*)})?\n")
-var handlers = map[string]func(string, string, int) string{
-	"code": codeHandler,
-	"note": noteHandler,
-}
 
 type model struct {
 	slides []string
@@ -65,18 +25,7 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-// renders normal text
-var namedStyles = map[string]lipgloss.Style{
-	"h1": lipgloss.NewStyle().
-		Bold(true).
-		Background(lipgloss.Color("#F25D94")),
-	"b": lipgloss.NewStyle().Bold(true),
-}
-var namedStyleNames = strings.Join(Keys(namedStyles), "|")
-var h1Regex = regexp.MustCompile(fmt.Sprintf("!(%s){(.+?)}", namedStyleNames))
-
 func (m *model) renderText(text string, width int) string {
-
 	buff := &strings.Builder{}
 
 	var offset int
@@ -94,7 +43,7 @@ func (m *model) renderText(text string, width int) string {
 		stylename := text[indecies[2] : indecies[3]]
 		toStyle := text[indecies[4] : indecies[5]]
 
-		buff.WriteString(namedStyles[stylename].MaxWidth(width).Render(toStyle))
+		buff.WriteString(namedStyleLookupTable[stylename].MaxWidth(width).Render(toStyle))
 		text=text[indecies[1]:]
 	}
 	return buff.String()
@@ -106,7 +55,7 @@ func (m *model) renderSlide(slide string) string {
 
 	var offset int
 	for {
-		indecies := pluginRegEx.FindStringSubmatchIndex(slide[offset:])
+		indecies := blockHandlerRegex.FindStringSubmatchIndex(slide[offset:])
 		// no plugin found .... render the text
 		if len(indecies) == 0 {
 			buff.WriteString(m.renderText(slide[offset:], m.vp.Width))
@@ -132,7 +81,7 @@ func (m *model) renderSlide(slide string) string {
 		offset = contentEnd + 3
 
 		pluginArg := slide[contentStart:contentEnd]
-		handlerResult := handlers[pluginName](pluginOpt, pluginArg, m.vp.Width)
+		handlerResult := blockHandlerLookupTable[pluginName](pluginOpt, pluginArg, m.vp.Width)
 		buff.WriteString(handlerResult)
 	}
 

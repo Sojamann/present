@@ -15,6 +15,12 @@ style:
 Wow this is a note
 ```
 
+@warning
+```
+And this is a warning 
+Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
+```
+
 --- [Slide]
 
 Hello my !b{name} is !h1{sojamann}.
