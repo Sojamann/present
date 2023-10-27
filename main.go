@@ -23,7 +23,7 @@ func Keys[M ~map[K]V, K comparable, V any](m M) []K {
 }
 
 // TODO: rename
-func codeHandler(arg string, code string) string {
+func codeHandler(arg string, code string, width int) string {
 	lexer := lexers.Fallback
 	// try getting the user defined lexer based on the name of the
 	// language. If not use the fallback lexer instead
@@ -33,11 +33,11 @@ func codeHandler(arg string, code string) string {
 	// the code starts at the next line
 	buff := &strings.Builder{}
 	quick.Highlight(buff, code, lexer.Config().Name, "terminal", "monokai")
-	return buff.String()
+	return lipgloss.NewStyle().MaxWidth(width).Render(buff.String())
 }
 
 var pluginRegEx = regexp.MustCompile("@(code)(:{(.*)})?\n")
-var handlers = map[string]func(string, string) string{
+var handlers = map[string]func(string, string, int) string{
 	"code": codeHandler,
 }
 
@@ -64,7 +64,7 @@ var namedStyles = map[string]lipgloss.Style{
 var namedStyleNames = strings.Join(Keys(namedStyles), "|")
 var h1Regex = regexp.MustCompile(fmt.Sprintf("!(%s){(.+?)}", namedStyleNames))
 
-func (m *model) renderText(text string) string {
+func (m *model) renderText(text string, width int) string {
 
 	buff := &strings.Builder{}
 
@@ -83,7 +83,7 @@ func (m *model) renderText(text string) string {
 		stylename := text[indecies[2] : indecies[3]]
 		toStyle := text[indecies[4] : indecies[5]]
 
-		buff.WriteString(namedStyles[stylename].Render(toStyle))
+		buff.WriteString(namedStyles[stylename].MaxWidth(width).Render(toStyle))
 		text=text[indecies[1]:]
 	}
 	return buff.String()
@@ -98,12 +98,12 @@ func (m *model) renderSlide(slide string) string {
 		indecies := pluginRegEx.FindStringSubmatchIndex(slide[offset:])
 		// no plugin found .... render the text
 		if len(indecies) == 0 {
-			buff.WriteString(m.renderText(slide[offset:]))
+			buff.WriteString(m.renderText(slide[offset:], m.vp.Width))
 			break
 		}
 
 		// write out everything we have seen up till the plugin starts
-		beforeString := m.renderText(slide[offset : offset+indecies[0]])
+		beforeString := m.renderText(slide[offset : offset+indecies[0]], m.vp.Width)
 		buff.WriteString(beforeString)
 
 		pluginName := slide[offset+indecies[2] : offset+indecies[3]]
@@ -121,7 +121,7 @@ func (m *model) renderSlide(slide string) string {
 		offset = contentEnd + 3
 
 		pluginArg := slide[contentStart:contentEnd]
-		handlerResult := handlers[pluginName](pluginOpt, pluginArg)
+		handlerResult := handlers[pluginName](pluginOpt, pluginArg, m.vp.Width)
 		buff.WriteString(handlerResult)
 	}
 
@@ -150,7 +150,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		key := msg.String()
 		switch key {
-		case "q":
+		case "q", tea.KeyEscape.String():
 			return m, tea.Quit
 		case "l", tea.KeyRight.String():
 			m.currSlide = min(m.currSlide+1, len(m.slides)-1)
