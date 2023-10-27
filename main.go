@@ -36,9 +36,20 @@ func codeHandler(arg string, code string, width int) string {
 	return lipgloss.NewStyle().MaxWidth(width).Render(buff.String())
 }
 
-var pluginRegEx = regexp.MustCompile("@(code)(:{(.*)})?\n")
+func noteHandler(arg string, code string, width int) string {
+	return lipgloss.NewStyle().
+		Width(width).
+		MaxWidth(width).
+		Foreground(lipgloss.AdaptiveColor{Light: "#343433", Dark: "#C1C6B2"}).
+		Background(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#353533"}).
+		Padding(1).
+		Render(code)
+}
+
+var pluginRegEx = regexp.MustCompile("@(code|note)(:{(.*)})?\n")
 var handlers = map[string]func(string, string, int) string{
 	"code": codeHandler,
+	"note": noteHandler,
 }
 
 type model struct {

@@ -10,6 +10,13 @@ style:
 
 --- [Slide]
 
+@note
+```
+Wow this is a note
+```
+
+--- [Slide]
+
 Hello my !b{name} is !h1{sojamann}.
 
 --- 
