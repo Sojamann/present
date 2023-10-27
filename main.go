@@ -1,14 +1,45 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"gopkg.in/yaml.v3"
 )
 
+
+type styleConfig struct {
+	Bold bool
+	Italic bool
+	Fg string
+	Bg string
+}
+
+type PresentationConfig struct {
+	Author string
+	Style map[string]styleConfig
+}
+
+func customStyleToLipgloss(custom map[string]styleConfig) map[string]lipgloss.Style {
+	result := make(map[string]lipgloss.Style)
+
+	for name, config := range custom {
+		if _, found := namedStyleLookupTable[name]; found {
+			log.Fatalln(fmt.Errorf("The custom name %s is a named style", name))
+		}
+
+		result[name] = lipgloss.NewStyle().
+			Bold(config.Bold).
+			Italic(config.Italic).
+			Foreground(lipgloss.Color(config.Fg)).
+			Background(lipgloss.Color(config.Bg))
+	}
+	return result
+}
 
 func main() {
 	data, err := os.ReadFile(os.Args[1])
@@ -29,7 +60,16 @@ func main() {
 	//fmt.Println(config)
 	//os.Exit(0)
 
-	m := NewPresentation(config, slides)
+	customStyles := customStyleToLipgloss(config.Style)
+
+	mergeStyles := MapMerge(customStyles, namedStyleLookupTable)
+	author := config.Author
+
+	m := &model{
+		slides: slides,
+		author: author,
+		namedStyles: mergeStyles,
+	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)

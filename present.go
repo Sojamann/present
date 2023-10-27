@@ -10,49 +10,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type styleConfig struct {
-	Bold bool
-	Italic bool
-	Fg string
-	Bg string
-}
-
-type PresentationConfig struct {
-	Author string
-	Style map[string]styleConfig
-}
-
-func customStyleToLipgloss(custom map[string]styleConfig) map[string]lipgloss.Style {
-	result := make(map[string]lipgloss.Style)
-
-	for name, config := range custom {
-		if _, found := namedStyleLookupTable[name]; found {
-			log.Fatalln(fmt.Errorf("The custom name %s is a named style", name))
-		}
-
-		result[name] = lipgloss.NewStyle().
-			Bold(config.Bold).
-			Italic(config.Italic).
-			Foreground(lipgloss.Color(config.Fg)).
-			Background(lipgloss.Color(config.Bg))
-	}
-	return result
-}
-
-func NewPresentation(config PresentationConfig, slides []string) *model {
-	return &model{
-		slides: slides,
-		author: config.Author,
-		customStyle: customStyleToLipgloss(config.Style),
-	}	
-}
-
 type model struct {
 	slides []string
-	config PresentationConfig
 	currSlide int
 
-	customStyle map[string]lipgloss.Style
+	namedStyles map[string]lipgloss.Style
 
 	author string
 
@@ -82,9 +44,7 @@ func (m *model) renderText(text string, width int) string {
 		stylename := text[indecies[2] : indecies[3]]
 		toStyle := text[indecies[4] : indecies[5]]
 		
-		if style, found := m.customStyle[stylename]; found {
-			buff.WriteString(style.MaxWidth(width).Render(toStyle))
-		} else if style, found := namedStyleLookupTable[stylename]; found {
+		if style, found := m.namedStyles[stylename]; found {
 			buff.WriteString(style.MaxWidth(width).Render(toStyle))
 		} else {
 			// NOTE: bubbletea does not like this...
