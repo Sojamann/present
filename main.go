@@ -1,165 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"gopkg.in/yaml.v3"
 )
 
-
-type model struct {
-	slides []string
-
-	currSlide int
-
-	ready bool
-	vp    viewport.Model
-}
-
-func (m *model) Init() tea.Cmd {
-	return nil
-}
-
-func (m *model) renderText(text string, width int) string {
-	buff := &strings.Builder{}
-
-	var offset int
-	for {
-		indecies := h1Regex.FindStringSubmatchIndex(text[offset:])
-		// no plugin found .... render the text
-		if len(indecies) == 0 {
-			buff.WriteString(text)
-			break
-		}
-
-		// write out everything we have seen up till the style starts
-		buff.WriteString(text[:indecies[0]])
-
-		stylename := text[indecies[2] : indecies[3]]
-		toStyle := text[indecies[4] : indecies[5]]
-
-		buff.WriteString(namedStyleLookupTable[stylename].MaxWidth(width).Render(toStyle))
-		text=text[indecies[1]:]
-	}
-	return buff.String()
-}
-
-// TODO: add error handling
-func (m *model) renderSlide(slide string) string {
-	buff := &strings.Builder{}
-
-	var offset int
-	for {
-		indecies := blockHandlerRegex.FindStringSubmatchIndex(slide[offset:])
-		// no plugin found .... render the text
-		if len(indecies) == 0 {
-			buff.WriteString(m.renderText(slide[offset:], m.vp.Width))
-			break
-		}
-
-		// write out everything we have seen up till the plugin starts
-		beforeString := m.renderText(slide[offset : offset+indecies[0]], m.vp.Width)
-		buff.WriteString(beforeString)
-
-		pluginName := slide[offset+indecies[2] : offset+indecies[3]]
-		pluginOpt := ""
-		if indecies[4] != -1 {
-			pluginOpt = slide[offset+indecies[6] : offset+indecies[7]]
-		}
-
-		// lets get the content
-		offset += indecies[1]
-		contentStart := strings.Index(slide[offset:], "```") + offset + 3
-		offset = contentStart
-
-		contentEnd := strings.Index(slide[offset:], "```") + offset
-		offset = contentEnd + 3
-
-		pluginArg := slide[contentStart:contentEnd]
-		handlerResult := blockHandlerLookupTable[pluginName](pluginOpt, pluginArg, m.vp.Width)
-		buff.WriteString(handlerResult)
-	}
-
-	// we want to center the entire content box not the
-	// text itself (this would be alignment)
-	width, height := lipgloss.Size(buff.String())
-	return lipgloss.NewStyle().
-		Height(m.vp.Height - 1).
-		MaxHeight(m.vp.Height - 1).
-		Width(m.vp.Width).
-		MaxWidth(m.vp.Width).
-		MarginTop((m.vp.Height - height) / 2).
-		MarginBottom((m.vp.Height - height) / 2).
-		MarginLeft((m.vp.Width - width) / 2).
-		MarginRight((m.vp.Width - width) / 2).
-		Render(buff.String())
-}
-
-func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		key := msg.String()
-		switch key {
-		case "q", tea.KeyEscape.String():
-			return m, tea.Quit
-		case "l", tea.KeyRight.String():
-			m.currSlide = min(m.currSlide+1, len(m.slides)-1)
-			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
-		case "h", tea.KeyLeft.String():
-			m.currSlide = max(0, m.currSlide-1)
-			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
-		}
-
-	case tea.WindowSizeMsg:
-		// -1 because of footer
-		if !m.ready {
-			m.vp = viewport.New(msg.Width, msg.Height-1)
-			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
-		} else {
-			m.vp.Width = msg.Width
-			m.vp.Height = msg.Height - 1
-		}
-		m.ready = true
-	}
-
-	// THe viewport might wants to do some things
-	m.vp, cmd = m.vp.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return m, tea.Batch(cmds...)
-}
-
-func (m *model) View() string {
-	if !m.ready {
-		return "\n Loading ... "
-	}
-
-	parts := 2
-	progress := lipgloss.NewStyle().
-		Width(m.vp.Width / parts).
-		Align(lipgloss.Left).
-		PaddingLeft(2).
-		Render(fmt.Sprintf("[%d/%d]", m.currSlide+1, len(m.slides)))
-
-	author := lipgloss.NewStyle().
-		Width(m.vp.Width / parts).
-		Align(lipgloss.Right).
-		PaddingRight(2).
-		Render("Author Name")
-	status := progress + author
-
-	return fmt.Sprintf("%s\n%s", m.vp.View(), status)
-}
 
 func main() {
 	data, err := os.ReadFile(os.Args[1])
@@ -173,9 +22,14 @@ func main() {
 	if slides[0] == "" {
 		slides = slides[1:]
 	}
-	m := &model{
-		slides: slides,
-	}
+	configSlide, slides := slides[0], slides[1:]
+	var config PresentationConfig
+	yaml.Unmarshal([]byte(configSlide), &config)
+	
+	//fmt.Println(config)
+	//os.Exit(0)
+
+	m := NewPresentation(config, slides)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)

@@ -1,12 +1,15 @@
---- [Settings]
+---
 background: black
 foreground: white
 
 style:
-    h1:
-        fg: red
-        bg: white
+    fancy:
+        fg: '#04B575'
         bold: true
+
+--- 
+
+Some !fancy{known} custom style.
 
 --- [Slide]
 
@@ -23,7 +26,7 @@ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint 
 
 --- [Slide]
 
-Hello my !b{name} is !h1{sojamann}.
+Hello !i{my} !b{name} is !h1{sojamann}.
 
 --- 
 
