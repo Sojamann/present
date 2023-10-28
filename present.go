@@ -180,7 +180,7 @@ func (m *model) View() string {
 		Width(m.vp.Width / parts).
 		Align(lipgloss.Right).
 		PaddingRight(2).
-		Render("Author Name")
+		Render(m.author)
 	status := progress + author
 
 	return fmt.Sprintf("%s\n%s", m.vp.View(), status)
