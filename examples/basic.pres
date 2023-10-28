@@ -13,16 +13,14 @@ Some !fancy{known} custom style.
 
 --- [Slide]
 
-@note
-```
+@note{
 Wow this is a note
-```
+}
 
-@warning
-```
+@warning{
 And this is a warning 
 Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint consectetur cupidatat.
-```
+}
 
 --- [Slide]
 
@@ -38,8 +36,7 @@ is okay with.
 
 We show some code
 
-@code
-```
+@code[go]{
 package main
 
 import "fmt"
@@ -47,5 +44,5 @@ import "fmt"
 func main() {
     fmt.Println("Hi")
 }
-```
+}
 

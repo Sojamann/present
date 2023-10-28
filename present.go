@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"regexp"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/viewport"
@@ -57,40 +58,50 @@ func (m *model) renderText(text string, width int) string {
 	return buff.String()
 }
 
+
+var blockHandlerNamePat = `(.+?)`
+var blockHandlerOptPat = `(\[(.*?)\])?`
+var blockHandlerContentPat = `{((?s).*?)}` // (?s) makes . match \n
+var blockHandlerRegex= regexp.MustCompile(fmt.Sprintf("@%s%s%s", blockHandlerNamePat, blockHandlerOptPat, blockHandlerContentPat))
+
 // TODO: add error handling
 func (m *model) renderSlide(slide string) string {
 	buff := &strings.Builder{}
 
-	var offset int
 	for {
-		indecies := blockHandlerRegex.FindStringSubmatchIndex(slide[offset:])
-		// no plugin found .... render the text
+		// 0/1 regexStart/End
+		// 2/3 handlerName
+		// 4/5 are options defined at all?
+		// 6/7 the handler options/argString
+		// 8/9 the block to handle
+		indecies := blockHandlerRegex.FindStringSubmatchIndex(slide)
+		// no blocks found .... render the text
 		if len(indecies) == 0 {
-			buff.WriteString(m.renderText(slide[offset:], m.vp.Width))
+			buff.WriteString(m.renderText(slide, m.vp.Width))
 			break
 		}
-
-		// write out everything we have seen up till the plugin starts
-		beforeString := m.renderText(slide[offset : offset+indecies[0]], m.vp.Width)
+		
+		// write out everything before the block starts
+		beforeString := m.renderText(slide[:indecies[0]], m.vp.Width)
 		buff.WriteString(beforeString)
 
-		pluginName := slide[offset+indecies[2] : offset+indecies[3]]
-		pluginOpt := ""
+		blockHandlerName := slide[indecies[2]:indecies[3]]
+		blockHandlerOpt := ""
 		if indecies[4] != -1 {
-			pluginOpt = slide[offset+indecies[6] : offset+indecies[7]]
+			blockHandlerOpt = slide[indecies[6]:indecies[7]]
 		}
 
-		// lets get the content
-		offset += indecies[1]
-		contentStart := strings.Index(slide[offset:], "```") + offset + 3
-		offset = contentStart
+		blockContent := slide[indecies[8]:indecies[9]]
 
-		contentEnd := strings.Index(slide[offset:], "```") + offset
-		offset = contentEnd + 3
+		blockHandler, found := m.blockHandlers[blockHandlerName]
+		if !found {
+			log.Fatalln(fmt.Errorf("block handler not defined"))	
+		}
 
-		pluginArg := slide[contentStart:contentEnd]
-		handlerResult := m.blockHandlers[pluginName](pluginOpt, pluginArg, m.vp.Width)
+		handlerResult := blockHandler(blockHandlerOpt, blockContent, m.vp.Width)
 		buff.WriteString(handlerResult)
+
+		slide = slide[indecies[1]:]
 	}
 
 	// we want to center the entire content box not the

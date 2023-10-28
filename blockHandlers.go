@@ -1,7 +1,6 @@
 package main
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2/lexers"
@@ -64,6 +63,5 @@ var DefaultBlockHandlers = map[string]blockHandler{
 	"warning": warningHandler,
 }
 
-var blockHandlerRegex = regexp.MustCompile("@(.+?)(:{(.*)})?\n")
 
 
