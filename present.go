@@ -21,9 +21,25 @@ type model struct {
 
 	ready bool
 	vp    viewport.Model
+
+	errors []string
 }
 
 func (m *model) Init() tea.Cmd {
+	// validate slides
+	for i, slide := range m.slides {
+		for _, match := range namedStyleRegex.FindAllStringSubmatch(slide, -1) {
+			if _, found := m.namedStyles[match[1]]; !found {
+				m.errors = append(m.errors, fmt.Sprintf("Slide %d - unknown style '%s' in: %s", i, match[1], match[0])) 
+			}
+		}
+		for _, match := range blockHandlerRegex.FindAllStringSubmatch(slide, -1) {
+			if _, found := m.blockHandlers[match[1]]; !found {
+				m.errors = append(m.errors, fmt.Sprintf("Slide %d - unknown block handler '%s' in: %s", i, match[1], match[0])) 
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -140,8 +156,10 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "h", tea.KeyLeft.String():
 			m.currSlide = max(0, m.currSlide-1)
 		}
-
-		m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
+		
+		if len(m.errors) == 0 {
+			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
+		}
 
 	case tea.WindowSizeMsg:
 		// -1 because of footer
@@ -151,7 +169,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.vp.Width = msg.Width
 			m.vp.Height = msg.Height - 1
 		}
-		m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
+		if len(m.errors) == 0 {
+			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
+		}
 		m.ready = true
 	}
 
@@ -165,6 +185,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) View() string {
 	if !m.ready {
 		return "\n Loading ... "
+	}
+	if len(m.errors) > 0 {
+		return strings.Join(m.errors, "\n\n")
 	}
 
 	parts := 2
