@@ -27,10 +27,6 @@ func customStyleToLipgloss(custom map[string]styleConfig) map[string]lipgloss.St
 	result := make(map[string]lipgloss.Style)
 
 	for name, config := range custom {
-		if _, found := namedStyleLookupTable[name]; found {
-			log.Fatalln(fmt.Errorf("The custom name %s is a named style", name))
-		}
-
 		result[name] = lipgloss.NewStyle().
 			Bold(config.Bold).
 			Italic(config.Italic).
@@ -41,8 +37,8 @@ func customStyleToLipgloss(custom map[string]styleConfig) map[string]lipgloss.St
 }
 
 func main() {
-	if len(os.Args) < 2 {
-		log.Fatalln(fmt.Errorf("Expected path to .pres file"))
+	if len(os.Args) != 2 {
+		die(fmt.Sprintf("Usage: %s file.pres\n", os.Args[0]))
 	}
 
 	data, err := os.ReadFile(os.Args[1])
@@ -57,9 +53,8 @@ func main() {
 	if found {
 		err := yaml.Unmarshal([]byte(before), &config)
 		if err != nil {
-			log.Fatalln(fmt.Errorf("Before ~~~ is must be yaml"))
+			die("Everything before ~~~ MUST be valid yaml")
 		}
-
 		slides = strings.Split(after, "---")
 	} else {
 		slides = strings.Split(before, "---")
@@ -69,11 +64,8 @@ func main() {
 		return
 	}
 
-	//fmt.Println(config)
-	//os.Exit(0)
-
 	customStyles := customStyleToLipgloss(config.Style)
-	mergeStyles := MapMerge(customStyles, namedStyleLookupTable)
+	mergeStyles := MapMerge(customStyles, DefaultStyles)
 	author := config.Author
 
 	m := &model{

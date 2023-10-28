@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
@@ -49,16 +48,15 @@ func (m *model) renderText(text string, width int) string {
 		// write out everything we have seen up till the style starts
 		buff.WriteString(text[:indecies[0]])
 
-		stylename := text[indecies[2]:indecies[3]]
-		toStyle := text[indecies[4]:indecies[5]]
+		styleName := text[indecies[2]:indecies[3]]
+		content := text[indecies[4]:indecies[5]]
 
-		style, found := m.namedStyles[stylename]
+		style, found := m.namedStyles[styleName]
 		if !found {
-			// NOTE: bubbletea does not like this...
-			log.Fatalln(fmt.Errorf("You used the style %s which is neither builtin or custom", stylename))
+			panic(fmt.Sprintf("Style '%s' not defined", styleName))
 		}
 
-		buff.WriteString(style.MaxWidth(width).Render(toStyle))
+		buff.WriteString(style.MaxWidth(width).Render(content))
 
 		text = text[indecies[1]:]
 	}
@@ -101,7 +99,7 @@ func (m *model) renderSlide(slide string) string {
 
 		blockHandler, found := m.blockHandlers[blockHandlerName]
 		if !found {
-			log.Fatalln(fmt.Errorf("block handler not defined"))
+			panic(fmt.Sprintf("Block Handler '%s' not defined", blockHandlerName))
 		}
 
 		handlerResult := blockHandler(blockHandlerOpt, blockContent, m.vp.Width)
@@ -139,21 +137,21 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "l", tea.KeyRight.String():
 			m.currSlide = min(m.currSlide+1, len(m.slides)-1)
-			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		case "h", tea.KeyLeft.String():
 			m.currSlide = max(0, m.currSlide-1)
-			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		}
+
+		m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 
 	case tea.WindowSizeMsg:
 		// -1 because of footer
 		if !m.ready {
 			m.vp = viewport.New(msg.Width, msg.Height-1)
-			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		} else {
 			m.vp.Width = msg.Width
 			m.vp.Height = msg.Height - 1
 		}
+		m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		m.ready = true
 	}
 

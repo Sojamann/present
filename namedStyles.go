@@ -5,7 +5,7 @@ import (
 )
 
 // renders normal text
-var namedStyleLookupTable = map[string]lipgloss.Style{
+var DefaultStyles = map[string]lipgloss.Style{
 	"h": lipgloss.NewStyle().
 			Bold(true).
 			Background(lipgloss.Color("#F25D94")),

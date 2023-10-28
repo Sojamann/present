@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 )
 
 func Keys[M ~map[K]V, K comparable, V any](m M) []K {
@@ -28,3 +29,9 @@ func MapMerge[M ~map[K]V, K comparable, V any](maps ...M) M {
 
 	return result
 }
+
+func die(msg string) {
+	os.Stderr.WriteString(msg)
+	os.Exit(1)
+}
+
