@@ -187,7 +187,13 @@ func (m *model) View() string {
 		return "\n Loading ... "
 	}
 	if len(m.errors) > 0 {
-		return strings.Join(m.errors, "\n\n")
+		return lipgloss.NewStyle().
+			Width(m.vp.Width).
+			MaxWidth(m.vp.Width).
+			MaxHeight(m.vp.Height).
+			Padding(3).
+			Foreground(lipgloss.Color("1")).
+			Render(strings.Join(m.errors, "\n\n"))
 	}
 
 	parts := 2
