@@ -10,7 +10,7 @@ author: Sojamann
 
 ~~~
 
-Some !fancy{known} custom style.
+Some !fancy{known} custom !red{style}.
 
 --- 
 
@@ -25,7 +25,7 @@ Lorem ipsum dolor sit amet, qui minim labore adipisicing minim sint cillum sint 
 
 ---
 
-Hello !i{my} !b{name} is !h1{sojamann}.
+Hello !i{my} !b{name} is !h{sojamann}.
 
 --- 
 
