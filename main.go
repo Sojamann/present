@@ -69,6 +69,7 @@ func main() {
 		slides: slides,
 		author: author,
 		namedStyles: mergeStyles,
+		blockHandlers: DefaultBlockHandlers,
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

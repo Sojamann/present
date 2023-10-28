@@ -45,13 +45,25 @@ func warningHandler(arg string, code string, width int) string {
 
 }
 
-var blockHandlerLookupTable = map[string]func(string, string, int) string{
+// a blockHandler is can have some special logic to handle
+// a certain block of code.
+// args:
+//	blockHandlerArgument - something to customize the behavior
+//	section				 - the text/block to handle/render
+//	width				 - the max width the block is allowed to have
+//							knowing that the blockHandler is able to make
+//							some better adjustments than when MaxWidth is
+//							applied from the outside
+// returns:	
+//	the string which should be displyed
+type blockHandler func(string, string, int) string 
+
+var DefaultBlockHandlers = map[string]blockHandler{
 	"code": codeHandler,
 	"note": noteHandler,
 	"warning": warningHandler,
 }
 
-var blockHandlers = Keys(blockHandlerLookupTable)
-var blockHandlerRegex = regexp.MustCompile("@(code|note|warning)(:{(.*)})?\n")
+var blockHandlerRegex = regexp.MustCompile("@(.+?)(:{(.*)})?\n")
 
 

@@ -15,6 +15,7 @@ type model struct {
 	currSlide int
 
 	namedStyles map[string]lipgloss.Style
+	blockHandlers map[string]blockHandler
 
 	author string
 
@@ -88,7 +89,7 @@ func (m *model) renderSlide(slide string) string {
 		offset = contentEnd + 3
 
 		pluginArg := slide[contentStart:contentEnd]
-		handlerResult := blockHandlerLookupTable[pluginName](pluginOpt, pluginArg, m.vp.Width)
+		handlerResult := m.blockHandlers[pluginName](pluginOpt, pluginArg, m.vp.Width)
 		buff.WriteString(handlerResult)
 	}
 
