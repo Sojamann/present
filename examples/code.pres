@@ -1,20 +1,20 @@
 
-@code:{go}
-```
+@code[go]
+{
 func main() {
     println("Test")
 }
-```
+}
 ---
 
 Some before
 
-@code:{yaml}
-```
+@code[yaml]
+{
 some: key
 list:
 - a
 - b
-```
+}
 Some after
 

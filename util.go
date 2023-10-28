@@ -5,7 +5,6 @@ import (
 	"log"
 )
 
-
 func Keys[M ~map[K]V, K comparable, V any](m M) []K {
 	r := make([]K, 0, len(m))
 	for k := range m {
@@ -16,7 +15,7 @@ func Keys[M ~map[K]V, K comparable, V any](m M) []K {
 
 func MapMerge[M ~map[K]V, K comparable, V any](maps ...M) M {
 	result := make(map[K]V)
-	
+
 	for _, toMerge := range maps {
 		for k, v := range toMerge {
 			if _, found := result[k]; found {
@@ -29,5 +28,3 @@ func MapMerge[M ~map[K]V, K comparable, V any](maps ...M) M {
 
 	return result
 }
-
-

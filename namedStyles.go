@@ -12,4 +12,3 @@ var namedStyleLookupTable = map[string]lipgloss.Style{
 	"b": lipgloss.NewStyle().Bold(true),
 	"i": lipgloss.NewStyle().Italic(true),
 }
-

@@ -12,10 +12,10 @@ import (
 )
 
 type model struct {
-	slides []string
+	slides    []string
 	currSlide int
 
-	namedStyles map[string]lipgloss.Style
+	namedStyles   map[string]lipgloss.Style
 	blockHandlers map[string]blockHandler
 
 	author string
@@ -31,6 +31,7 @@ func (m *model) Init() tea.Cmd {
 var namedStyleNamePat = `(.+?)`
 var namedStyleContentPat = `((?s).+?)`
 var namedStyleRegex = regexp.MustCompile(fmt.Sprintf("!%s{%s}", namedStyleNamePat, namedStyleContentPat))
+
 func (m *model) renderText(text string, width int) string {
 	buff := &strings.Builder{}
 
@@ -48,10 +49,10 @@ func (m *model) renderText(text string, width int) string {
 		// write out everything we have seen up till the style starts
 		buff.WriteString(text[:indecies[0]])
 
-		stylename := text[indecies[2] : indecies[3]]
-		toStyle := text[indecies[4] : indecies[5]]
+		stylename := text[indecies[2]:indecies[3]]
+		toStyle := text[indecies[4]:indecies[5]]
 
-		style, found := m.namedStyles[stylename];
+		style, found := m.namedStyles[stylename]
 		if !found {
 			// NOTE: bubbletea does not like this...
 			log.Fatalln(fmt.Errorf("You used the style %s which is neither builtin or custom", stylename))
@@ -59,16 +60,15 @@ func (m *model) renderText(text string, width int) string {
 
 		buff.WriteString(style.MaxWidth(width).Render(toStyle))
 
-		text=text[indecies[1]:]
+		text = text[indecies[1]:]
 	}
 	return buff.String()
 }
 
-
 var blockHandlerNamePat = `(.+?)`
 var blockHandlerOptPat = `(\[(.*?)\])?`
 var blockHandlerContentPat = `{((?s).*?)}` // (?s) makes . match \n
-var blockHandlerRegex= regexp.MustCompile(fmt.Sprintf("@%s%s%s", blockHandlerNamePat, blockHandlerOptPat, blockHandlerContentPat))
+var blockHandlerRegex = regexp.MustCompile(fmt.Sprintf("@%s%s%s", blockHandlerNamePat, blockHandlerOptPat, blockHandlerContentPat))
 
 // TODO: add error handling
 func (m *model) renderSlide(slide string) string {
@@ -86,7 +86,7 @@ func (m *model) renderSlide(slide string) string {
 			buff.WriteString(m.renderText(slide, m.vp.Width))
 			break
 		}
-		
+
 		// write out everything before the block starts
 		beforeString := m.renderText(slide[:indecies[0]], m.vp.Width)
 		buff.WriteString(beforeString)
@@ -101,7 +101,7 @@ func (m *model) renderSlide(slide string) string {
 
 		blockHandler, found := m.blockHandlers[blockHandlerName]
 		if !found {
-			log.Fatalln(fmt.Errorf("block handler not defined"))	
+			log.Fatalln(fmt.Errorf("block handler not defined"))
 		}
 
 		handlerResult := blockHandler(blockHandlerOpt, blockContent, m.vp.Width)
@@ -185,4 +185,3 @@ func (m *model) View() string {
 
 	return fmt.Sprintf("%s\n%s", m.vp.View(), status)
 }
-

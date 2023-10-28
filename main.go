@@ -11,17 +11,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-
 type styleConfig struct {
-	Bold bool
+	Bold   bool
 	Italic bool
-	Fg string
-	Bg string
+	Fg     string
+	Bg     string
 }
 
 type PresentationConfig struct {
 	Author string
-	Style map[string]styleConfig
+	Style  map[string]styleConfig
 }
 
 func customStyleToLipgloss(custom map[string]styleConfig) map[string]lipgloss.Style {
@@ -46,29 +45,37 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	slides := strings.Split(string(data), "---")
+
+	var config PresentationConfig
+	var slides []string
+
+	before, after, found := strings.Cut(string(data), "~~~")
+	if found {
+		err := yaml.Unmarshal([]byte(before), &config)
+		if err != nil {
+			log.Fatalln(fmt.Errorf("Before ~~~ is must be yaml"))
+		}
+
+		slides = strings.Split(after, "---")
+	} else {
+		slides = strings.Split(before, "---")
+	}
+
 	if len(slides) == 0 {
 		return
 	}
-	if slides[0] == "" {
-		slides = slides[1:]
-	}
-	configSlide, slides := slides[0], slides[1:]
-	var config PresentationConfig
-	yaml.Unmarshal([]byte(configSlide), &config)
-	
+
 	//fmt.Println(config)
 	//os.Exit(0)
 
 	customStyles := customStyleToLipgloss(config.Style)
-
 	mergeStyles := MapMerge(customStyles, namedStyleLookupTable)
 	author := config.Author
 
 	m := &model{
-		slides: slides,
-		author: author,
-		namedStyles: mergeStyles,
+		slides:        slides,
+		author:        author,
+		namedStyles:   mergeStyles,
 		blockHandlers: DefaultBlockHandlers,
 	}
 	p := tea.NewProgram(m, tea.WithAltScreen())
