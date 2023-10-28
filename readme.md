@@ -1,4 +1,12 @@
-# Presentation
+# Present
+
+## ToDo
+[ ] images
+[ ] bullet lists?
+[ ] themes
+[ ] layouts (split left and right)?
+[ ] plugins?
+[ ] code execution?
 
 ## What it is not
 - no support for live execution of command. This is cool and all but one can 

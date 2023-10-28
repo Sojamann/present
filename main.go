@@ -41,6 +41,10 @@ func customStyleToLipgloss(custom map[string]styleConfig) map[string]lipgloss.St
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		log.Fatalln(fmt.Errorf("Expected path to .pres file"))
+	}
+
 	data, err := os.ReadFile(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
