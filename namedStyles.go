@@ -1,8 +1,6 @@
 package main
 
 import (
-	"regexp"
-
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -14,5 +12,4 @@ var namedStyleLookupTable = map[string]lipgloss.Style{
 	"b": lipgloss.NewStyle().Bold(true),
 	"i": lipgloss.NewStyle().Italic(true),
 }
-var h1Regex = regexp.MustCompile("!(.+?){(.+?)}")
 

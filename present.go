@@ -28,12 +28,17 @@ func (m *model) Init() tea.Cmd {
 	return nil
 }
 
+var namedStyleNamePat = `(.+?)`
+var namedStyleContentPat = `((?s).+?)`
+var namedStyleRegex = regexp.MustCompile(fmt.Sprintf("!%s{%s}", namedStyleNamePat, namedStyleContentPat))
 func (m *model) renderText(text string, width int) string {
 	buff := &strings.Builder{}
 
-	var offset int
 	for {
-		indecies := h1Regex.FindStringSubmatchIndex(text[offset:])
+		// 0/1  - start/end
+		// 2/3	- style name
+		// 4/5	- content
+		indecies := namedStyleRegex.FindStringSubmatchIndex(text)
 		// no plugin found .... render the text
 		if len(indecies) == 0 {
 			buff.WriteString(text)
@@ -45,13 +50,14 @@ func (m *model) renderText(text string, width int) string {
 
 		stylename := text[indecies[2] : indecies[3]]
 		toStyle := text[indecies[4] : indecies[5]]
-		
-		if style, found := m.namedStyles[stylename]; found {
-			buff.WriteString(style.MaxWidth(width).Render(toStyle))
-		} else {
+
+		style, found := m.namedStyles[stylename];
+		if !found {
 			// NOTE: bubbletea does not like this...
 			log.Fatalln(fmt.Errorf("You used the style %s which is neither builtin or custom", stylename))
 		}
+
+		buff.WriteString(style.MaxWidth(width).Render(toStyle))
 
 		text=text[indecies[1]:]
 	}
