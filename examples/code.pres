@@ -1,6 +1,5 @@
 
-@code[go]
-{
+@code[go] {
 func main() {
     println("Test")
 }
@@ -9,8 +8,7 @@ func main() {
 
 Some before
 
-@code[yaml]
-{
+@code[yaml] {
 some: key
 list:
 - a

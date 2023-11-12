@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 func Keys[M ~map[K]V, K comparable, V any](m M) []K {
@@ -28,6 +30,18 @@ func MapMerge[M ~map[K]V, K comparable, V any](maps ...M) M {
 	}
 
 	return result
+}
+
+func abspath(path string) string {
+	path = filepath.Clean(path)
+	if strings.Contains(path, "~") {
+		if home, err := os.UserHomeDir(); err == nil {
+			path = strings.Replace(path, "~", home, 1)
+		}
+	}
+
+	path, _ = filepath.Abs(path)
+	return path
 }
 
 func die(msg string) {

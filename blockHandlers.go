@@ -1,11 +1,18 @@
 package main
 
 import (
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+	"os"
 	"strings"
 
 	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/quick"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sojamann/timg"
+	"gopkg.in/yaml.v3"
 )
 
 // TODO: rename
@@ -43,17 +50,47 @@ func warningHandler(arg string, code string, width int) string {
 
 }
 
+func imgHandler(arg string, block string, maxWidth int) string {
+	fp, err := os.Open(abspath(strings.TrimSpace(block)))
+
+	if err != nil {
+		return lipgloss.NewStyle().
+			MaxWidth(maxWidth).
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(lipgloss.Color("63")).
+			Render("IMAGE NOT FOUND")
+	}
+	defer fp.Close()
+
+	img, _, err := image.Decode(fp)
+	if err != nil {
+		die(err.Error())
+	}
+	
+	type imgConfig struct {
+		Width int
+		Height int
+	}
+	
+	var conf imgConfig
+	if err := yaml.Unmarshal([]byte(arg), &conf); err != nil {
+		conf.Width = maxWidth	
+		conf.Height = maxWidth/2
+	}
+
+	return timg.Render(img, timg.FitTo(conf.Width, conf.Height))
+}
+
 // a blockHandler is can have some special logic to handle
 // a certain block of code.
 // args:
 //
 //	blockHandlerArgument - something to customize the behavior
 //	section				 - the text/block to handle/render
-//	width				 - the max width the block is allowed to have
+//	maxWidth			 - the max width the block is allowed to have
 //							knowing that the blockHandler is able to make
 //							some better adjustments than when MaxWidth is
 //							applied from the outside
-//
 // returns:
 //
 //	the string which should be displyed
@@ -63,4 +100,5 @@ var DefaultBlockHandlers = map[string]blockHandler{
 	"code":    codeHandler,
 	"note":    noteHandler,
 	"warning": warningHandler,
+	"img": imgHandler,
 }
