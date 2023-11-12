@@ -11,6 +11,18 @@ Some !fancy{known} custom !red{style}.
 
 ---
 
+@comment{
+    the options are in form of a json document
+    width and height must not be specified but it makes sense
+    since the image will take too much space otherwise.
+    As we cannot really know what the intended size is one should
+    supply it.
+
+    When the option (width..) cannot be parsed the image width is the
+    maxWidth the block is allowed to have...
+
+    If the file cannot be found a little placeholder is rendered for it
+}
 @img[{width: 20, height: 20}]{ ~/Downloads/ice.png }
 
 --- 

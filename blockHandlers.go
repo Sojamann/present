@@ -50,6 +50,10 @@ func warningHandler(arg string, code string, width int) string {
 
 }
 
+func commentHandler(arg string, code string, maxWidth int) string {
+	return ""
+}
+
 func imgHandler(arg string, block string, maxWidth int) string {
 	fp, err := os.Open(abspath(strings.TrimSpace(block)))
 
@@ -101,4 +105,5 @@ var DefaultBlockHandlers = map[string]blockHandler{
 	"note":    noteHandler,
 	"warning": warningHandler,
 	"img": imgHandler,
+	"comment": commentHandler,
 }
