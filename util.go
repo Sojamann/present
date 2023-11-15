@@ -48,4 +48,3 @@ func die(msg string) {
 	os.Stderr.WriteString(msg)
 	os.Exit(1)
 }
-

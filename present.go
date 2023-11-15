@@ -30,12 +30,12 @@ func (m *model) Init() tea.Cmd {
 	for i, slide := range m.slides {
 		for _, match := range namedStyleRegex.FindAllStringSubmatch(slide, -1) {
 			if _, found := m.namedStyles[match[1]]; !found {
-				m.errors = append(m.errors, fmt.Sprintf("Slide %d - unknown style '%s' in: %s", i, match[1], match[0])) 
+				m.errors = append(m.errors, fmt.Sprintf("Slide %d - unknown style '%s' in: %s", i, match[1], match[0]))
 			}
 		}
 		for _, match := range blockHandlerRegex.FindAllStringSubmatch(slide, -1) {
 			if _, found := m.blockHandlers[match[1]]; !found {
-				m.errors = append(m.errors, fmt.Sprintf("Slide %d - unknown block handler '%s' in: %s", i, match[1], match[0])) 
+				m.errors = append(m.errors, fmt.Sprintf("Slide %d - unknown block handler '%s' in: %s", i, match[1], match[0]))
 			}
 		}
 	}
@@ -156,7 +156,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "h", tea.KeyLeft.String():
 			m.currSlide = max(0, m.currSlide-1)
 		}
-		
+
 		if len(m.errors) == 0 {
 			m.vp.SetContent(m.renderSlide(m.slides[m.currSlide]))
 		}

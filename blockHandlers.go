@@ -70,16 +70,16 @@ func imgHandler(arg string, block string, maxWidth int) string {
 	if err != nil {
 		die(err.Error())
 	}
-	
+
 	type imgConfig struct {
-		Width int
+		Width  int
 		Height int
 	}
-	
+
 	var conf imgConfig
 	if err := yaml.Unmarshal([]byte(arg), &conf); err != nil {
-		conf.Width = maxWidth	
-		conf.Height = maxWidth/2
+		conf.Width = maxWidth
+		conf.Height = maxWidth / 2
 	}
 
 	return timg.Render(img, timg.FitTo(conf.Width, conf.Height))
@@ -95,6 +95,7 @@ func imgHandler(arg string, block string, maxWidth int) string {
 //							knowing that the blockHandler is able to make
 //							some better adjustments than when MaxWidth is
 //							applied from the outside
+//
 // returns:
 //
 //	the string which should be displyed
@@ -104,6 +105,6 @@ var DefaultBlockHandlers = map[string]blockHandler{
 	"code":    codeHandler,
 	"note":    noteHandler,
 	"warning": warningHandler,
-	"img": imgHandler,
+	"img":     imgHandler,
 	"comment": commentHandler,
 }
